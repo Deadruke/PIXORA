@@ -1,1 +1,345 @@
 
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PIXORA — Video Editor</title>
+<style>
+:root {
+  --bg:#08080b;
+  --panel:#111116;
+  --panel2:#191921;
+  --purple:#9b5cff;
+  --text:#f5f3fa;
+  --muted:#92909f;
+  --border:#292832;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;background:var(--bg);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+button,input,select{font:inherit}
+button{cursor:pointer}
+.topbar{
+  height:65px;padding:0 20px;display:flex;align-items:center;
+  justify-content:space-between;border-bottom:1px solid var(--border);
+  background:#0b0b0f;position:sticky;top:0;z-index:5;
+}
+.logo{font-size:23px;font-weight:900;letter-spacing:2px}
+.logo span{color:var(--purple)}
+.pro{background:linear-gradient(120deg,#9b5cff,#6d36df);
+  border:0;color:white;border-radius:10px;padding:10px 15px;font-weight:800}
+main{max-width:1200px;margin:auto;padding:24px 18px}
+.heading{display:flex;justify-content:space-between;gap:12px;align-items:center}
+h1{font-size:clamp(26px,5vw,38px);margin:5px 0}
+p{color:var(--muted);line-height:1.5}
+.small{font-size:13px;color:var(--muted)}
+.primary,.secondary{
+  padding:12px 15px;border-radius:11px;font-weight:700;border:1px solid var(--border)
+}
+.primary{background:var(--purple);color:white;border-color:var(--purple)}
+.secondary{background:var(--panel2);color:white}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:16px;margin-top:22px}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:17px;padding:16px;min-width:0}
+.preview{
+  min-height:290px;background:#050507;border-radius:12px;display:flex;
+  align-items:center;justify-content:center;position:relative;overflow:hidden;
+}
+#media{max-width:100%;max-height:55vh;display:none;object-fit:contain}
+.placeholder{text-align:center;padding:25px}
+.placeholder .symbol{font-size:43px;color:var(--purple)}
+#caption{
+  display:none;position:absolute;left:5%;right:5%;bottom:9%;
+  text-align:center;white-space:pre-wrap;overflow-wrap:anywhere;
+  font-size:25px;font-weight:900;color:white;
+  text-shadow:-2px -2px #000,2px 2px #000,0 0 8px #000;
+  pointer-events:none;
+}
+.tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.tools button{flex:1;min-width:100px}
+.section-title{font-size:15px;font-weight:800;margin:0 0 14px}
+.control{margin-bottom:18px}
+.control label{display:flex;justify-content:space-between;font-size:13px;margin-bottom:9px}
+input[type=range]{width:100%;accent-color:var(--purple)}
+input[type=text],select{
+  width:100%;padding:11px;background:#09090d;color:white;
+  border:1px solid var(--border);border-radius:10px;outline:none
+}
+input[type=color]{width:100%;height:38px;background:transparent;border:0}
+.timeline{margin-top:16px}
+.track{background:#08080c;border:1px solid var(--border);border-radius:10px;padding:12px;margin-top:9px;min-height:44px;overflow-wrap:anywhere}
+.track span{color:#d6baff;font-size:13px}
+.bottom{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:15px}
+.notice{font-size:12px;color:var(--muted);margin-top:12px}
+footer{text-align:center;color:#686575;font-size:12px;padding:30px 10px}
+@media(max-width:760px){
+  main{padding:18px 12px}
+  .layout{grid-template-columns:1fr}
+  .heading{align-items:flex-start}
+  .preview{min-height:240px}
+  .topbar{padding:0 13px}
+  .bottom{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="logo">PIX<span>ORA</span></div>
+  <button class="pro" onclick="showPro()">✦ PIXORA PRO</button>
+</header>
+
+<main>
+  <div class="heading">
+    <div>
+      <div class="small">CREATIVE STUDIO</div>
+      <h1>Твоя идея. Твой стиль.</h1>
+      <p>Редактируй фото и видео прямо в браузере.</p>
+    </div>
+    <button class="primary" onclick="document.getElementById('file').click()">＋ Импорт</button>
+  </div>
+
+  <input id="file" type="file" accept="image/*,video/*" hidden>
+
+  <div class="layout">
+    <section>
+      <div class="panel">
+        <div class="preview" id="preview">
+          <div class="placeholder" id="placeholder">
+            <div class="symbol">✦</div>
+            <strong>Твори без ограничений</strong>
+            <p>Нажми «Импорт», чтобы выбрать фото или видео</p>
+            <button class="secondary" onclick="document.getElementById('file').click()">Выбрать файл</button>
+          </div>
+          <img id="media" alt="Предпросмотр изображения">
+          <div id="caption"></div>
+        </div>
+        <div class="tools">
+          <button class="secondary" onclick="resetAdjustments()">↺ Сброс</button>
+          <button class="secondary" onclick="downloadImage()">↓ Скачать фото</button>
+          <button class="secondary" onclick="document.getElementById('file').click()">＋ Заменить</button>
+        </div>
+        <p class="notice" id="status">Файлы обрабатываются локально в браузере.</p>
+      </div>
+
+      <div class="panel timeline">
+        <div class="section-title">⌁ Моя монтажная область</div>
+        <div class="track"><span id="fileName">Медиафайл ещё не выбран</span></div>
+        <div class="track"><span id="captionTrack">Текст: пока пусто</span></div>
+        <p class="notice">Это базовая версия: полноценный монтаж по дорожкам добавим отдельно.</p>
+      </div>
+    </section>
+
+    <aside class="panel">
+      <div class="section-title">Настройки изображения</div>
+
+      <div class="control">
+        <label>Яркость <span id="brightnessVal">100%</span></label>
+        <input id="brightness" type="range" min="0" max="200" value="100">
+      </div>
+      <div class="control">
+        <label>Контраст <span id="contrastVal">100%</span></label>
+        <input id="contrast" type="range" min="0" max="200" value="100">
+      </div>
+      <div class="control">
+        <label>Насыщенность <span id="saturationVal">100%</span></label>
+        <input id="saturation" type="range" min="0" max="250" value="100">
+      </div>
+      <div class="control">
+        <label>Оттенки серого <span id="grayVal">0%</span></label>
+        <input id="gray" type="range" min="0" max="100" value="0">
+      </div>
+
+      <div class="section-title" style="margin-top:25px">Субтитры</div>
+      <div class="control">
+        <label>Текст субтитров</label>
+        <input id="subtitleText" type="text" maxlength="250" placeholder="Напиши свой текст...">
+      </div>
+      <div class="control">
+        <label>Шрифт</label>
+        <select id="font">
+          <option value="Arial">Arial</option>
+          <option value="Impact">Impact</option>
+          <option value="Georgia">Georgia</option>
+          <option value="monospace">Monospace</option>
+        </select>
+      </div>
+      <div class="control">
+        <label>Цвет текста</label>
+        <input id="textColor" type="color" value="#ffffff">
+      </div>
+      <div class="control">
+        <label>Размер текста <span id="sizeVal">25px</span></label>
+        <input id="textSize" type="range" min="12" max="60" value="25">
+      </div>
+      <div class="control">
+        <label>Положение по вертикали <span id="positionVal">9%</span></label>
+        <input id="position" type="range" min="0" max="80" value="9">
+      </div>
+      <button class="primary" style="width:100%" onclick="applySubtitle()">Применить текст</button>
+    </aside>
+  </div>
+  <footer>PIXORA STUDIO · Твори в своём стиле</footer>
+</main>
+
+<script>
+const fileInput = document.getElementById('file');
+const media = document.getElementById('media');
+const placeholder = document.getElementById('placeholder');
+const caption = document.getElementById('caption');
+const statusText = document.getElementById('status');
+let currentUrl = null;
+let currentType = '';
+
+fileInput.addEventListener('change', () => {
+  const file = fileInput.files && fileInput.files[0];
+  if (!file) return;
+
+  if (currentUrl) URL.revokeObjectURL(currentUrl);
+  currentUrl = URL.createObjectURL(file);
+  currentType = file.type;
+
+  media.onload = null;
+  media.onerror = null;
+  media.pause && media.pause();
+  const oldVideo = document.getElementById('videoPreview');
+  if (oldVideo) oldVideo.remove();
+
+  if (file.type.startsWith('image/')) {
+    media.src = currentUrl;
+    media.style.display = 'block';
+    media.onload = () => {
+      placeholder.style.display = 'none';
+      statusText.textContent = 'Фото загружено. Настройки применяются в предпросмотре.';
+      updateFilters();
+    };
+    media.onerror = () => {
+      statusText.textContent = 'Не удалось открыть этот файл.';
+    };
+  } else if (file.type.startsWith('video/')) {
+    media.style.display = 'none';
+    const video = document.createElement('video');
+    video.id = 'videoPreview';
+    video.src = currentUrl;
+    video.controls = true;
+    video.playsInline = true;
+    video.style.cssText = 'max-width:100%;max-height:55vh;display:block';
+    video.onloadedmetadata = () => {
+      placeholder.style.display = 'none';
+      statusText.textContent = 'Видео загружено. Предпросмотр доступен.';
+      updateFilters();
+    };
+    video.onerror = () => {
+      statusText.textContent = 'Не удалось открыть это видео в браузере.';
+    };
+    document.getElementById('preview').insertBefore(video, caption);
+  } else {
+    statusText.textContent = 'Выбери изображение или видео.';
+    return;
+  }
+
+  document.getElementById('fileName').textContent =
+    file.name + ' · ' + (file.size / 1024 / 1024).toFixed(1) + ' MB';
+});
+
+function updateFilters() {
+  const brightness = document.getElementById('brightness').value;
+  const contrast = document.getElementById('contrast').value;
+  const saturation = document.getElementById('saturation').value;
+  const gray = document.getElementById('gray').value;
+  document.getElementById('brightnessVal').textContent = brightness + '%';
+  document.getElementById('contrastVal').textContent = contrast + '%';
+  document.getElementById('saturationVal').textContent = saturation + '%';
+  document.getElementById('grayVal').textContent = gray + '%';
+
+  const filter = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%) grayscale(${gray}%)`;
+  media.style.filter = filter;
+  const video = document.getElementById('videoPreview');
+  if (video) video.style.filter = filter;
+}
+
+['brightness','contrast','saturation','gray'].forEach(id => {
+  document.getElementById(id).addEventListener('input', updateFilters);
+});
+
+function resetAdjustments() {
+  document.getElementById('brightness').value = 100;
+  document.getElementById('contrast').value = 100;
+  document.getElementById('saturation').value = 100;
+  document.getElementById('gray').value = 0;
+  updateFilters();
+}
+
+function applySubtitle() {
+  const text = document.getElementById('subtitleText').value;
+  caption.textContent = text;
+  caption.style.display = text ? 'block' : 'none';
+  caption.style.fontFamily = document.getElementById('font').value;
+  caption.style.color = document.getElementById('textColor').value;
+  caption.style.fontSize = document.getElementById('textSize').value + 'px';
+  caption.style.bottom = document.getElementById('position').value + '%';
+  document.getElementById('sizeVal').textContent = document.getElementById('textSize').value + 'px';
+  document.getElementById('positionVal').textContent = document.getElementById('position').value + '%';
+  document.getElementById('captionTrack').textContent = text ? 'Текст: ' + text : 'Текст: пока пусто';
+}
+
+document.getElementById('textSize').addEventListener('input', applySubtitle);
+document.getElementById('position').addEventListener('input', applySubtitle);
+document.getElementById('textColor').addEventListener('input', applySubtitle);
+document.getElementById('font').addEventListener('change', applySubtitle);
+document.getElementById('subtitleText').addEventListener('input', applySubtitle);
+
+function downloadImage() {
+  if (!currentUrl || !currentType.startsWith('image/')) {
+    alert('Для скачивания выбери фото. Экспорт видео добавим отдельно.');
+    return;
+  }
+  const img = new Image();
+  img.onload = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.filter = getComputedStyle(media).filter;
+    ctx.drawImage(img, 0, 0);
+    ctx.filter = 'none';
+
+    const text = document.getElementById('subtitleText').value;
+    if (text) {
+      const size = Number(document.getElementById('textSize').value) * img.naturalWidth / media.clientWidth;
+      ctx.font = `bold ${size}px ${document.getElementById('font').value}`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+      const x = canvas.width / 2;
+      const y = canvas.height * (1 - Number(document.getElementById('position').value) / 100);
+      ctx.lineWidth = Math.max(2, size / 10);
+      ctx.strokeStyle = '#000000';
+      ctx.fillStyle = document.getElementById('textColor').value;
+      ctx.strokeText(text, x, y, canvas.width * 0.9);
+      ctx.fillText(text, x, y, canvas.width * 0.9);
+    }
+
+    canvas.toBlob(blob => {
+      if (!blob) {
+        alert('Не удалось экспортировать изображение.');
+        return;
+      }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'pixora-edited.png';
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }, 'image/png');
+  };
+  img.src = currentUrl;
+}
+
+function showPro() {
+  alert('PIXORA PRO скоро появится! Сейчас ты можешь бесплатно пользоваться базовыми инструментами.');
+}
+</script>
+</body>
+</html>
+
